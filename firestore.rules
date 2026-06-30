@@ -1,0 +1,264 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (default-deny catch-all)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        request.auth.token.email.endsWith('.demo@school.edu') ||
+        request.auth.token.email == 'msarathi94@gmail.com'
+      );
+    }
+
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    function isAdmin(uid) {
+      return isVerifiedUser() && (
+        getUserRole(uid) == 'admin' ||
+        request.auth.token.email == 'admin.demo@school.edu' ||
+        request.auth.token.email == 'msarathi94@gmail.com'
+      );
+    }
+
+    function isTeacher(uid) {
+      return isVerifiedUser() && (
+        getUserRole(uid) == 'teacher' ||
+        request.auth.token.email == 'teacher.demo@school.edu'
+      );
+    }
+
+    function isParent(uid) {
+      return isVerifiedUser() && (
+        getUserRole(uid) == 'parent' ||
+        request.auth.token.email == 'parent.demo@school.edu'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation schemas
+    function isValidUserProfile(data) {
+      return data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role is string && (data.role == 'parent' || data.role == 'teacher' || data.role == 'admin') &&
+             data.name is string && data.name.size() <= 100 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             data.keys().hasAll(['uid', 'email', 'role', 'name', 'gradeClass']) && data.keys().size() == 5;
+    }
+
+    function isValidStudent(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.emisId is string && data.emisId.size() <= 128 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             data.section is string && data.section.size() <= 10 &&
+             data.rollNo is string && data.rollNo.size() <= 20 &&
+             data.parentEmail is string && data.parentEmail.size() <= 200 &&
+             data.keys().hasAll(['id', 'emisId', 'name', 'gradeClass', 'section', 'rollNo', 'parentEmail']);
+    }
+
+    function isValidAnnouncement(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.isRainHoliday is bool &&
+             data.date is string && data.date.size() <= 20 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             data.createdBy is string && data.createdBy.size() <= 100 &&
+             data.createdByEmail is string && data.createdByEmail.size() <= 200 &&
+             data.createdAt is int &&
+             data.encrypted is bool &&
+             data.keys().hasAll(['id', 'title', 'content', 'isRainHoliday', 'date', 'gradeClass', 'createdBy', 'createdByEmail', 'createdAt', 'encrypted']) && data.keys().size() == 10;
+    }
+
+    function isValidHomework(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.subject is string && data.subject.size() <= 50 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 5000 &&
+             data.dueDate is string && data.dueDate.size() <= 20 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             data.createdBy is string && data.createdBy.size() <= 100 &&
+             data.createdByEmail is string && data.createdByEmail.size() <= 200 &&
+             data.createdAt is int &&
+             data.encrypted is bool &&
+             data.keys().hasAll(['id', 'subject', 'title', 'description', 'dueDate', 'gradeClass', 'createdBy', 'createdByEmail', 'createdAt', 'encrypted']) && data.keys().size() == 10;
+    }
+
+    function isValidOnlineTest(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.subject is string && data.subject.size() <= 50 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             (data.durationMinutes is int || data.durationMinutes is float) &&
+             data.questions is list &&
+             data.createdBy is string &&
+             data.createdAt is int &&
+             data.keys().hasAll(['id', 'title', 'subject', 'gradeClass', 'durationMinutes', 'questions', 'createdBy', 'createdAt']) && data.keys().size() == 8;
+    }
+
+    function isValidTestSubmission(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.testId is string && data.testId.size() <= 128 &&
+             data.testTitle is string && data.testTitle.size() <= 200 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.parentEmail is string && data.parentEmail.size() <= 200 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             (data.score is int || data.score is float) &&
+             (data.totalQuestions is int || data.totalQuestions is float) &&
+             data.timestamp is int &&
+             data.keys().hasAll(['id', 'testId', 'testTitle', 'studentName', 'parentEmail', 'gradeClass', 'score', 'totalQuestions', 'timestamp']) && data.keys().size() == 9;
+    }
+
+    function isValidNewsArticle(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.titleEn is string && data.titleEn.size() <= 200 &&
+             data.titleTa is string && data.titleTa.size() <= 200 &&
+             data.contentEn is string && data.contentEn.size() <= 10000 &&
+             data.contentTa is string && data.contentTa.size() <= 10000 &&
+             (data.likes is int || data.likes is float) &&
+             data.likedBy is list &&
+             data.publishedAt is int &&
+             data.author is string && data.author.size() <= 100 &&
+             data.authorEmail is string && data.authorEmail.size() <= 200 &&
+             data.category is string && data.category.size() <= 50;
+    }
+
+    function isValidHealthAlert(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.gradeClass is string && data.gradeClass.size() <= 50 &&
+             data.section is string && data.section.size() <= 10 &&
+             data.parentEmail is string && data.parentEmail.size() <= 200 &&
+             data.symptoms is list &&
+             data.status is string && (data.status == 'sent' || data.status == 'seen' || data.status == 'acknowledged' || data.status == 'on_my_way') &&
+             data.teacherName is string && data.teacherName.size() <= 100 &&
+             data.teacherEmail is string && data.teacherEmail.size() <= 200 &&
+             data.createdAt is int;
+    }
+
+    function isValidCallSession(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.parentEmail is string && data.parentEmail.size() <= 200 &&
+             data.teacherName is string && data.teacherName.size() <= 100 &&
+             data.teacherEmail is string && data.teacherEmail.size() <= 200 &&
+             data.status is string && (data.status == 'ringing' || data.status == 'connected' || data.status == 'declined' || data.status == 'ended') &&
+             data.createdAt is int;
+    }
+
+    // Rules matching individual collections
+    match /users/{userId} {
+      allow get: if isVerifiedUser();
+      allow list: if isVerifiedUser() && (isAdmin(request.auth.uid) || isTeacher(request.auth.uid));
+      allow create: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming());
+      allow update: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming()) && incoming().role == existing().role && incoming().uid == existing().uid;
+      allow delete: if isAdmin(request.auth.uid);
+    }
+
+    match /students/{studentId} {
+      allow get: if isVerifiedUser() && (isAdmin(request.auth.uid) || isTeacher(request.auth.uid) || resource.data.parentEmail == request.auth.token.email);
+      allow list: if isVerifiedUser() && (
+        isAdmin(request.auth.uid) || 
+        isTeacher(request.auth.uid) || 
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email)
+      );
+      allow create: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidStudent(incoming());
+      allow update: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidStudent(incoming());
+      allow delete: if isAdmin(request.auth.uid);
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isVerifiedUser();
+      allow create, update: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidAnnouncement(incoming());
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+
+    match /homework/{homeworkId} {
+      allow read: if isVerifiedUser();
+      allow create, update: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidHomework(incoming());
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+
+    match /tests/{testId} {
+      allow read: if isVerifiedUser();
+      allow create, update: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidOnlineTest(incoming());
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+
+    match /submissions/{submissionId} {
+      allow get: if isVerifiedUser() && (isAdmin(request.auth.uid) || isTeacher(request.auth.uid) || resource.data.parentEmail == request.auth.token.email);
+      allow list: if isVerifiedUser() && (
+        isAdmin(request.auth.uid) || 
+        isTeacher(request.auth.uid) || 
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email)
+      );
+      allow create: if isVerifiedUser() && isValidTestSubmission(incoming()) && incoming().parentEmail == request.auth.token.email;
+      allow update: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidTestSubmission(incoming());
+      allow delete: if isAdmin(request.auth.uid);
+    }
+
+    match /news/{newsId} {
+      allow read: if isVerifiedUser();
+      allow create: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidNewsArticle(incoming());
+      allow update: if isVerifiedUser() && (
+        ((isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidNewsArticle(incoming())) ||
+        (isParent(request.auth.uid) && incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'likedBy']))
+      );
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+
+    match /health_alerts/{alertId} {
+      allow get: if isVerifiedUser() && (isAdmin(request.auth.uid) || isTeacher(request.auth.uid) || resource.data.parentEmail == request.auth.token.email);
+      allow list: if isVerifiedUser() && (
+        isAdmin(request.auth.uid) || 
+        isTeacher(request.auth.uid) || 
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email)
+      );
+      allow create: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidHealthAlert(incoming());
+      allow update: if isVerifiedUser() && (
+        ((isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidHealthAlert(incoming())) ||
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+      );
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+
+    match /calls/{callId} {
+      allow get: if isVerifiedUser() && (isAdmin(request.auth.uid) || isTeacher(request.auth.uid) || resource.data.parentEmail == request.auth.token.email);
+      allow list: if isVerifiedUser() && (
+        isAdmin(request.auth.uid) || 
+        isTeacher(request.auth.uid) || 
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email)
+      );
+      allow create: if (isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidCallSession(incoming());
+      allow update: if isVerifiedUser() && (
+        ((isAdmin(request.auth.uid) || isTeacher(request.auth.uid)) && isValidCallSession(incoming())) ||
+        (isParent(request.auth.uid) && resource.data.parentEmail == request.auth.token.email && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'connectedAt', 'endedAt']))
+      );
+      allow delete: if isAdmin(request.auth.uid) || isTeacher(request.auth.uid);
+    }
+  }
+}

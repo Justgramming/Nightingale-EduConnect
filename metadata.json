@@ -1,0 +1,6 @@
+{
+  "name": "Nightingale EduConnect",
+  "description": "An intuitive portal for parents and teachers, providing real-time rain holiday alerts, homework details, online tests, and student leaderboards, featuring secure authentication and end-to-end data encryption.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

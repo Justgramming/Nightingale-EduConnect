@@ -1,0 +1,203 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Represents a user profile with role-based access controls.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user ID from Firebase Auth." },
+        "email": { "type": "string", "description": "The user's registered email address." },
+        "role": { "type": "string", "enum": ["teacher", "parent", "admin"], "description": "The role-based permission assigned to this user." },
+        "name": { "type": "string", "description": "The user's display name." },
+        "gradeClass": { "type": "string", "description": "The grade class assigned or associated with the profile." }
+      },
+      "required": ["uid", "email", "role", "name", "gradeClass"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Represents an individual student record in the school database.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID or EMIS ID of the student." },
+        "emisId": { "type": "string", "description": "Unique Educational Management Information System ID." },
+        "name": { "type": "string", "description": "Full name of the student." },
+        "gradeClass": { "type": "string", "description": "The grade or standard (e.g. I STD, II STD)." },
+        "section": { "type": "string", "description": "The section (e.g. A, B, C)." },
+        "rollNo": { "type": "string", "description": "Student roll number." },
+        "gender": { "type": "string", "description": "Gender of the student." },
+        "dob": { "type": "string", "description": "Date of birth (YYYY-MM-DD)." },
+        "parentEmail": { "type": "string", "description": "The email address of the associated parent." },
+        "attendance": { "type": "object", "description": "Attendance map keyed by date (YYYY-MM-DD)." },
+        "marks": { "type": "object", "description": "Marks details keyed by examId/testId." },
+        "results": { "type": "object", "description": "Results details keyed by examId/testId." }
+      },
+      "required": ["id", "emisId", "name", "gradeClass", "section", "rollNo", "parentEmail"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Represents a school announcement, holiday warning or emergency alert.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique document ID." },
+        "title": { "type": "string", "description": "Title of the announcement." },
+        "content": { "type": "string", "description": "The encrypted body or normal text of the announcement." },
+        "isRainHoliday": { "type": "boolean", "description": "Flag indicating if this announcement declares a rain holiday." },
+        "date": { "type": "string", "description": "Date string (YYYY-MM-DD)." },
+        "gradeClass": { "type": "string", "description": "The grade class this alert is targeted at, or 'All'." },
+        "createdBy": { "type": "string", "description": "The author name." },
+        "createdByEmail": { "type": "string", "description": "The author email." },
+        "createdAt": { "type": "number", "description": "Epoch timestamp of when the announcement was posted." },
+        "encrypted": { "type": "boolean", "description": "Whether the content is encrypted." }
+      },
+      "required": ["id", "title", "content", "isRainHoliday", "date", "gradeClass", "createdBy", "createdByEmail", "createdAt", "encrypted"]
+    },
+    "Homework": {
+      "title": "Homework",
+      "description": "Represents a class homework task.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique homework task ID." },
+        "subject": { "type": "string", "description": "Subject of the assignment." },
+        "title": { "type": "string", "description": "Homework title." },
+        "description": { "type": "string", "description": "Detailed description of the assignment (potentially encrypted)." },
+        "dueDate": { "type": "string", "description": "Due date (YYYY-MM-DD)." },
+        "gradeClass": { "type": "string", "description": "The target grade standard." },
+        "createdBy": { "type": "string", "description": "The posting teacher's name." },
+        "createdByEmail": { "type": "string", "description": "The posting teacher's email." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." },
+        "encrypted": { "type": "boolean", "description": "Flag specifying if details are E2E encrypted." }
+      },
+      "required": ["id", "subject", "title", "description", "dueDate", "gradeClass", "createdBy", "createdByEmail", "createdAt", "encrypted"]
+    },
+    "OnlineTest": {
+      "title": "OnlineTest",
+      "description": "Represents an interactive practice test or quiz generated via Gemini.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique test ID." },
+        "title": { "type": "string", "description": "The test title." },
+        "subject": { "type": "string", "description": "Subject of the test." },
+        "gradeClass": { "type": "string", "description": "Target grade class." },
+        "durationMinutes": { "type": "number", "description": "Duration allowed for completion in minutes." },
+        "questions": { "type": "array", "description": "List of interactive multiple choice questions." },
+        "createdBy": { "type": "string", "description": "Name of creator." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." }
+      },
+      "required": ["id", "title", "subject", "gradeClass", "durationMinutes", "questions", "createdBy", "createdAt"]
+    },
+    "TestSubmission": {
+      "title": "TestSubmission",
+      "description": "Represents a student's practice test submission record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique submission record ID." },
+        "testId": { "type": "string", "description": "ID of the practice test taken." },
+        "testTitle": { "type": "string", "description": "Title of the practice test." },
+        "studentName": { "type": "string", "description": "Name of the student." },
+        "parentEmail": { "type": "string", "description": "The email of the parent who facilitated the test." },
+        "gradeClass": { "type": "string", "description": "Grade class standard of the student." },
+        "score": { "type": "number", "description": "Number of correct answers." },
+        "totalQuestions": { "type": "number", "description": "Total questions in the test." },
+        "timestamp": { "type": "number", "description": "Submission epoch timestamp." }
+      },
+      "required": ["id", "testId", "testTitle", "studentName", "parentEmail", "gradeClass", "score", "totalQuestions", "timestamp"]
+    },
+    "NewsArticle": {
+      "title": "NewsArticle",
+      "description": "An article published on the school buzz feed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique article ID." },
+        "titleEn": { "type": "string", "description": "English title." },
+        "titleTa": { "type": "string", "description": "Tamil translation title." },
+        "contentEn": { "type": "string", "description": "English article body." },
+        "contentTa": { "type": "string", "description": "Tamil translation body." },
+        "imageUrl": { "type": "string", "description": "Optional image URL." },
+        "likes": { "type": "number", "description": "Number of like reactions." },
+        "likedBy": { "type": "array", "description": "List of user emails or IDs who liked the post." },
+        "publishedAt": { "type": "number", "description": "Publish timestamp." },
+        "author": { "type": "string", "description": "Author display name." },
+        "authorEmail": { "type": "string", "description": "Author email address." },
+        "category": { "type": "string", "description": "Category tag." }
+      },
+      "required": ["id", "titleEn", "titleTa", "contentEn", "contentTa", "likes", "likedBy", "publishedAt", "author", "authorEmail", "category"]
+    },
+    "HealthAlert": {
+      "title": "HealthAlert",
+      "description": "A health notification alert dispatched to a parent by the teacher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique health alert ID." },
+        "studentId": { "type": "string", "description": "Associated student database ID." },
+        "studentName": { "type": "string", "description": "Student display name." },
+        "gradeClass": { "type": "string", "description": "Student grade class standard." },
+        "section": { "type": "string", "description": "Student section." },
+        "parentEmail": { "type": "string", "description": "Email address of the parent." },
+        "symptoms": { "type": "array", "description": "List of identified symptoms." },
+        "temperature": { "type": "string", "description": "Simulated body temperature (e.g. 101.5 F)." },
+        "notes": { "type": "string", "description": "Additional text logs from the teacher." },
+        "status": { "type": "string", "enum": ["sent", "seen", "acknowledged", "on_my_way"], "description": "The acknowledgment lifecycle status of the alert." },
+        "teacherName": { "type": "string", "description": "Name of the sender teacher." },
+        "teacherEmail": { "type": "string", "description": "Email of the sender teacher." },
+        "createdAt": { "type": "number", "description": "Time the health alert was created." }
+      },
+      "required": ["id", "studentId", "studentName", "gradeClass", "section", "parentEmail", "symptoms", "status", "teacherName", "teacherEmail", "createdAt"]
+    },
+    "CallSession": {
+      "title": "CallSession",
+      "description": "Represents a virtual parent-teacher telephone call session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique call session document ID." },
+        "studentId": { "type": "string", "description": "Associated student database ID." },
+        "studentName": { "type": "string", "description": "Associated student display name." },
+        "parentEmail": { "type": "string", "description": "Email address of the target parent." },
+        "teacherName": { "type": "string", "description": "Name of the caller teacher." },
+        "teacherEmail": { "type": "string", "description": "Email of the caller teacher." },
+        "status": { "type": "string", "enum": ["ringing", "connected", "declined", "ended"], "description": "The current call state." },
+        "createdAt": { "type": "number", "description": "Call initiation epoch timestamp." },
+        "connectedAt": { "type": "number", "description": "Call connection epoch timestamp." },
+        "endedAt": { "type": "number", "description": "Call hangup/termination epoch timestamp." }
+      },
+      "required": ["id", "studentId", "studentName", "parentEmail", "teacherName", "teacherEmail", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "UserProfile",
+      "description": "Stores user accounts and profiles with granular roles (teacher, parent, admin)."
+    },
+    "students": {
+      "schema": "Student",
+      "description": "Stores individual student records including EMIS info, grade details, marks, and attendance."
+    },
+    "announcements": {
+      "schema": "Announcement",
+      "description": "Stores emergency notifications, weather reports, and general campus news."
+    },
+    "homework": {
+      "schema": "Homework",
+      "description": "Stores assignment guidelines with optional secure end-to-end encryption."
+    },
+    "tests": {
+      "schema": "OnlineTest",
+      "description": "Stores practice worksheets and multiple choice questionnaires."
+    },
+    "submissions": {
+      "schema": "TestSubmission",
+      "description": "Stores student grades and performance outcomes on completed quizzes."
+    },
+    "news": {
+      "schema": "NewsArticle",
+      "description": "Stores posts, general advisories, and likes metrics in the school feed."
+    },
+    "health_alerts": {
+      "schema": "HealthAlert",
+      "description": "Stores immediate child medical updates dispatched to parents by teaching staff."
+    },
+    "calls": {
+      "schema": "CallSession",
+      "description": "Stores interactive telephonic call signaling records for virtual huddles."
+    }
+  }
+}
